@@ -1,65 +1,62 @@
+import sys
+from PyQt5.QtCore import pyqtSlot, QDate,QTime,QDateTime,Qt
+from PyQt5 import QtGui
+from PyQt5.QtWidgets import QApplication, QMainWindow
+from PyQt5.uic import loadUi
 import requests
 import os
 import time
 from bs4 import BeautifulSoup
-from tkinter import *
-from tkinter.ttk import Combobox
 
 
-def clicked():
-    n = txt.get() + '-'
-    n = n.replace(' ', '')
-    m = combo.get() + '-' + combo1.get()
+class Conv(QMainWindow):
+    def __init__(self):
+        super(Conv, self).__init__()
+        loadUi('converter.ui', self)
+        self.setWindowTitle('Конвертер')
+        self.setWindowIcon(QtGui.QIcon('конвертер.png'))
+        now = QDateTime.currentDateTime()
+        self.textEdit_2.setText(now.toString())
+        x = self.fillCombobox()
+        x1 = self.fillCombobox1()
+        self.pushButton.clicked.connect(self.retrieveText)
+    def fillCombobox(self):
+        per_iz = ['Выберите', 'RUB', 'USD', 'EUR', 'CHF']
+        for i in per_iz:
+            self.comboBox.addItem(i)
 
-    n = n + m
+    def fillCombobox1(self):
+        per_iz = ['Выберите', 'RUB', 'USD', 'EUR', 'CHF']
+        for i in per_iz:
+            self.comboBox_2.addItem(i)
 
-    SITE = 'https://finance.rambler.ru/calculators/converter/'
-    SITE = SITE + n
+    def retrieveText(self):
+        summ = self.plainTextEdit.toPlainText()
+        summ = int(summ)
+        site = 'https://finance.rambler.ru/calculators/converter/'
+        site = site + str(summ) + '-' + self.comboBox.currentText() + "-" + self.comboBox_2.currentText()+'/'
+        os.system("cls")
 
-    os.system("cls")
+        #headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.99 Safari/537.36 Edg/97.0.1072.69'}
 
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.99 Safari/537.36 Edg/97.0.1072.69'}
+        full_page = requests.get(site)
 
-    full_page = requests.get(SITE, headers=headers)
+        soup = BeautifulSoup(full_page.content, 'html.parser')
 
-    soup = BeautifulSoup(full_page.content, 'html.parser')
+        date = soup.findAll('div', {'class': 'converter-display__value'})
 
-    date = soup.findAll('div', {'class': 'converter-display__value'})
+        self.textEdit.setText(str(date[1].text) + " " + self.comboBox_2.currentText())
 
-    lbl1.configure(text=date[1].text + ' ' + combo1.get())
+        #now = QDateTime.currentDateTime()
 
+        #print("Local datetime: ", now.toString(Qt.ISODate))
+        #self.textEdit_2.setText(now.toString(Qt.ISODate))
+        #print("Universal datetime: ", now.toUTC().toString(Qt.ISODate))
 
-window = Tk()
-window.title("Курс валют")
-window.geometry('400x250')
-selected = StringVar()
-combo = Combobox(window)
-combo1 = Combobox(window)
+        #print("The offset from UTC is: {0} seconds".format(now.offsetFromUtc()))
 
-lbl = Label(window, text="Введите сумму: ")
-lbl.grid(column=0, row=0)
-txt = Entry(window, width=23)
-txt.grid(column=1, row=0)
-
-lbl = Label(window, text="Перевод из: ")
-lbl.grid(column=0, row=2)
-combo['values'] = ('Выберите', 'RUB', 'USD', 'EUR', 'CHF')
-combo.current(0)  # установите вариант по умолчанию
-combo.grid(column=1, row=2)
-
-lbl = Label(window, text="Перевод в: ")
-lbl.grid(column=0, row=4)
-combo1['values'] = ('Выберите', 'RUB', 'USD', 'EUR', 'CHF')
-combo1.current(0)  # установите вариант по умолчанию
-btn = Button(window, text="Загрузить", command=clicked)
-combo1.grid(column=1, row=4)
-btn.grid(column=2, row=4)
-
-lbl = Label(window, text="Курс: ")
-lbl.grid(column=0, row=6)
-lbl1 = Label(window, text="Данные")
-lbl1.grid(column=1, row=6)
-
-window.mainloop()
-
+#if __name__ == "__main__":
+app = QApplication(sys.argv)
+widget = Conv()
+widget.show()
+sys.exit(app.exec_())
